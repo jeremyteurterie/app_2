@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 
-const Camera = () => {
+const Camera = ({ onFrame }) => {
   const videoRef = useRef(null);
   const [devices, setDevices] = useState([]);
   const [selectedDeviceId, setSelectedDeviceId] = useState('');
@@ -22,30 +22,17 @@ const Camera = () => {
   }, [selectedDeviceId]);
 
   // Fonction pour démarrer la caméra avec le dispositif sélectionné
-  const handleStartCamera = async (deviceId) => {
+  const handleStartCamera = async () => {
+    if (!selectedDeviceId) return; // S'assurer qu'un dispositif est sélectionné
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { deviceId: deviceId ? { exact: deviceId } : undefined },
+        video: { deviceId: { exact: selectedDeviceId } },
       });
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
-        // Une fois le flux démarré, récupérer la liste des dispositifs
-        enumerateDevices();
       }
     } catch (err) {
       console.error("Erreur lors de l'accès à la caméra: ", err);
-    }
-  };
-
-  // Fonction pour récupérer la liste des dispositifs de caméra disponibles
-  const enumerateDevices = async () => {
-    const devices = await navigator.mediaDevices.enumerateDevices();
-    const videoDevices = devices.filter(
-      (device) => device.kind === 'videoinput'
-    );
-    setDevices(videoDevices);
-    if (videoDevices.length > 0) {
-      setSelectedDeviceId(videoDevices[0].deviceId);
     }
   };
 
@@ -53,8 +40,23 @@ const Camera = () => {
   const handleStopCamera = () => {
     if (videoRef.current && videoRef.current.srcObject) {
       videoRef.current.srcObject.getTracks().forEach((track) => track.stop());
+      videoRef.current.srcObject = null;
     }
   };
+
+  // Exécuter onFrame à intervalles réguliers
+  useEffect(() => {
+    let interval;
+    if (videoRef.current && typeof onFrame === 'function') {
+      interval = setInterval(() => {
+        onFrame(videoRef.current);
+      }, 3000); // Ajustez l'intervalle selon les besoins
+    }
+
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [onFrame, selectedDeviceId]); // Se réabonner lorsque onFrame ou selectedDeviceId change
 
   return (
     <div>
@@ -71,9 +73,7 @@ const Camera = () => {
           ))}
         </select>
       )}
-      <button onClick={() => handleStartCamera(selectedDeviceId)}>
-        Démarrer la caméra
-      </button>
+      <button onClick={handleStartCamera}>Démarrer la caméra</button>
       <button onClick={handleStopCamera}>Arrêter la caméra</button>
     </div>
   );
