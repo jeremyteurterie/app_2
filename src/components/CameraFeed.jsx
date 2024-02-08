@@ -18,17 +18,11 @@ const Camera = ({ onFrame }) => {
   }, []);
 
   const handleStartCamera = async () => {
-    if (selectedDeviceId) {
-      try {
-        const stream = await navigator.mediaDevices.getUserMedia({
-          video: { deviceId: { exact: selectedDeviceId } },
-        });
-        if (videoRef.current) {
-          videoRef.current.srcObject = stream;
-        }
-      } catch (err) {
-        console.error("Erreur lors de l'accès à la caméra: ", err);
-      }
+    const stream = await navigator.mediaDevices.getUserMedia({
+      video: { deviceId: { exact: selectedDeviceId } },
+    });
+    if (videoRef.current) {
+      videoRef.current.srcObject = stream;
     }
   };
 
