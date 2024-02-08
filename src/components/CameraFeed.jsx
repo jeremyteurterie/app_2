@@ -29,9 +29,23 @@ const Camera = () => {
       });
       if (videoRef.current) {
         videoRef.current.srcObject = stream;
+        // Une fois le flux démarré, récupérer la liste des dispositifs
+        enumerateDevices();
       }
     } catch (err) {
       console.error("Erreur lors de l'accès à la caméra: ", err);
+    }
+  };
+
+  // Fonction pour récupérer la liste des dispositifs de caméra disponibles
+  const enumerateDevices = async () => {
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    const videoDevices = devices.filter(
+      (device) => device.kind === 'videoinput'
+    );
+    setDevices(videoDevices);
+    if (videoDevices.length > 0) {
+      setSelectedDeviceId(videoDevices[0].deviceId);
     }
   };
 
